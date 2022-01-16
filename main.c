@@ -3,16 +3,18 @@
 #include "SDL2/SDL_ttf.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "createenemy.c"
 #define Width 800
 #define Height 800
 #define Plane_File "myplane.png"
-#define FrameRate 40
+#define FrameRate 35
+#define Enemy1_File "enemy1.png"
 
 int background_speed = 2;
 int plane_speed = 4;
-int enemy1_speed = 5;
-
+int enemy1_speed = 4;
+int whether_create_enemy1 = 0;
 typedef struct player{
     int x;
     int y;
@@ -44,6 +46,10 @@ SDL_Color FontColor = {255,10,10,255};//红色
 
 SDL_Texture *PlayerTexture = NULL;
 SDL_Rect PlayerRect;
+SDL_Texture *Enemy1Texture = NULL;
+SDL_Rect Enemy1Rect;
+CreateEnemy *enemy1[50];
+
 
 void Quit();
 void LOAD();
@@ -65,6 +71,7 @@ int main(int argc, char *argv[])
             0
     );
     Renderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_ACCELERATED);
+
     LOAD();
     while(1){
         int flag = 0;
@@ -136,6 +143,7 @@ void BattlefieldLoad(){
     PlayerRect.y = Player_main->y;
     PlayerRect.w = 60;
     PlayerRect.h = 60;
+    Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
     int score = 0;
     char score_[100] = {0};
     int Hp = 100;
@@ -160,6 +168,7 @@ void BattlefieldLoad(){
     SDL_RenderPresent(Renderer);
     while(1){
         long begin = SDL_GetTicks();
+        srand((unsigned)time(NULL));
         SDL_RenderClear(Renderer);
         ScoreFont = TTF_OpenFont("BERNHC.TTF",50);
         ScoreSurface = TTF_RenderUTF8_Blended(ScoreFont,"Score:",FontColor);
@@ -206,13 +215,39 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
+        if(whether_create_enemy1 == 0){
+            for (int i = 0; i < 50; i++) {
+                if(enemy1[i] == NULL){
+                    enemy1[i] = create_level1();
+                    break;
+                }
+            }
+            whether_create_enemy1 = 150;
+        }else{
+            whether_create_enemy1--;
+        }
+        for (int i = 0; i < 50; i++) {
+            if(enemy1[i] != NULL && enemy1[i]->y <= 800){
+                if(enemy1[i]->x <= 750){
+                    Enemy1Rect.x = enemy1[i]->x;
+                }else{
+                    Enemy1Rect.x = enemy1[i]->x - 100;
+                }
+                Enemy1Rect.y = enemy1[i]->y;
+                enemy1[i]->y += enemy1_speed;
+                Enemy1Rect.w = 50;
+                Enemy1Rect.h = 50;
+                SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
+            }else if(enemy1[i] != NULL && enemy1[i]->y > 800){
+                CreateEnemy *p = enemy1[i];
+                enemy1[i] = NULL;
+                free(p);
+            }
+        }
 
         PlayerRect.x = Player_main->x;
         PlayerRect.y = Player_main->y;
         SDL_RenderCopy(Renderer,PlayerTexture,NULL,&PlayerRect);
-
-
-
         SDL_RenderPresent(Renderer);
         SDL_Event game_event;
         while(SDL_PollEvent(&game_event)){
@@ -289,6 +324,8 @@ void BattlefieldLoad(){
                     break;
             }
         }
+
+
         long current = SDL_GetTicks();
         long cost = current - begin;
         long frame = 1000 / FrameRate;
@@ -309,5 +346,10 @@ void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, S
     SDL_DestroyTexture(BattlefieldTexture);
     SDL_DestroyTexture(BattlefieldTexture_1);
     SDL_RenderClear(Renderer);
+    for (int i = 0; i < 50; i++) {
+        CreateEnemy *p1 = enemy1[i];
+        enemy1[i] = NULL;
+        free(p1);
+    }
     free(p);
 }
