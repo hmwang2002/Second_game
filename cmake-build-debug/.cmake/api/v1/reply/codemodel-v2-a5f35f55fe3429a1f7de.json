@@ -16,7 +16,8 @@
 					"targetIndexes" : 
 					[
 						0,
-						1
+						1,
+						2
 					]
 				}
 			],
@@ -32,12 +33,20 @@
 					"targetIndexes" : 
 					[
 						0,
-						1
+						1,
+						2
 					]
 				}
 			],
 			"targets" : 
 			[
+				{
+					"directoryIndex" : 0,
+					"id" : "bullet::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-bullet-Debug-a36800f79246e1f9d5b2.json",
+					"name" : "bullet",
+					"projectIndex" : 0
+				},
 				{
 					"directoryIndex" : 0,
 					"id" : "createenemy::@6890427a1f51a3e7e1df",
@@ -48,7 +57,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "game2::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-game2-Debug-1d6f535e94950492b57b.json",
+					"jsonFile" : "target-game2-Debug-d0c1288104c608689caa.json",
 					"name" : "game2",
 					"projectIndex" : 0
 				}

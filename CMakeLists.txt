@@ -6,6 +6,7 @@ set(CMAKE_C_STANDARD 11)
 
 add_executable(game2 main.c)
 add_executable(createenemy createenemy.c)
+add_executable(bullet bullet.c)
 
 target_link_libraries(game2 mingw32 SDL2main SDL2)
 target_link_libraries(game2 mingw32 SDL2_image SDL2)

@@ -4,15 +4,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <stdbool.h>
 #include "createenemy.c"
+#include "bullet.c"
 #define Width 800
 #define Height 800
 #define Plane_File "myplane.png"
 #define FrameRate 35
 #define Enemy1_File "enemy1.png"
+#define Bullet1_File "bullet1.png"
 
 int background_speed = 2;
-int plane_speed = 4;
+int plane_speed = 8;
 int enemy1_speed = 4;
 int whether_create_enemy1 = 0;
 typedef struct player{
@@ -50,6 +53,10 @@ SDL_Texture *Enemy1Texture = NULL;
 SDL_Rect Enemy1Rect;
 CreateEnemy *enemy1[50];
 
+SDL_Texture *Bullet_1_Texture = NULL;
+SDL_Rect Bullet_1_Rect;
+CreateBullet *bullet1[100];
+int reload_bullet1;
 
 void Quit();
 void LOAD();
@@ -57,6 +64,7 @@ void LOAD();
 void BattlefieldLoad();
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1 ,
                      Player *p);
+bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy);
 
 int main(int argc, char *argv[])
 {
@@ -135,14 +143,17 @@ void BattlefieldLoad(){
     Player_main->x = 370;
     Player_main->y = 740;
     Player_main->level = 1;
-    /**
-     * 回头封装成初始化函数
-     */
     PlayerTexture = IMG_LoadTexture(Renderer,Plane_File);
     PlayerRect.x = Player_main->x;
     PlayerRect.y = Player_main->y;
     PlayerRect.w = 60;
     PlayerRect.h = 60;
+    Bullet_1_Rect.w = 5;
+    Bullet_1_Rect.h = 11;
+    Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet1_File);
+    /**
+     * 回头封装成初始化函数
+     */
     Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
     int score = 0;
     char score_[100] = {0};
@@ -215,6 +226,23 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
+        for (int i = 0; i < 50; i++) {
+            if(enemy1[i] != NULL){
+                for (int j = 0; j < 100; j++) {
+                    if(bullet1[j] != NULL && Is_Bombed(bullet1[j],enemy1[i])){
+                            CreateEnemy *clear_enemy = enemy1[i];
+                            enemy1[i] = NULL;
+                            free(clear_enemy);
+                            CreateBullet *clear_bullet = bullet1[j];
+                            bullet1[j] = NULL;
+                            free(clear_bullet);
+                            score += 10;
+                            break;
+                    }
+                }
+            }
+
+        }
         if(whether_create_enemy1 == 0){
             for (int i = 0; i < 50; i++) {
                 if(enemy1[i] == NULL){
@@ -244,6 +272,35 @@ void BattlefieldLoad(){
                 free(p);
             }
         }
+        if(reload_bullet1 == 0){
+            for (int i = 0; i < 100; i++) {
+                if(bullet1[i] == NULL){
+                    bullet1[i] = CreateBullet_1();
+                    bullet1[i]->x = Player_main->x + PlayerRect.w / 2;
+                    bullet1[i]->y = Player_main->y;
+                    break;
+                }
+            }
+            reload_bullet1 = 10;
+        }else{
+            reload_bullet1--;
+        }
+        for (int i = 0; i < 100; i++) {
+            if(bullet1[i] != NULL){
+                if(bullet1[i]->y >= 0){
+                    bullet1[i]->y -= bullet_speed;
+                    Bullet_1_Rect.x = bullet1[i]->x;
+                    Bullet_1_Rect.y = bullet1[i]->y;
+                    SDL_RenderCopy(Renderer,Bullet_1_Texture,NULL,&Bullet_1_Rect);
+                }else{
+                    CreateBullet *p_bullet = bullet1[i];
+                    bullet1[i] = NULL;
+                    free(p_bullet);
+                }
+            }
+        }
+
+
 
         PlayerRect.x = Player_main->x;
         PlayerRect.y = Player_main->y;
@@ -325,7 +382,6 @@ void BattlefieldLoad(){
             }
         }
 
-
         long current = SDL_GetTicks();
         long cost = current - begin;
         long frame = 1000 / FrameRate;
@@ -340,6 +396,15 @@ void BattlefieldLoad(){
      */
 
 }
+bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy){
+    if(bullet->x >= enemy->x && bullet->x <= enemy->x + Enemy1Rect.w
+    && bullet->y >= enemy->y && bullet->y <= enemy->y + Enemy1Rect.h){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1
                      ,Player *p){
     SDL_FreeSurface(Battlefield);
@@ -350,6 +415,11 @@ void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, S
         CreateEnemy *p1 = enemy1[i];
         enemy1[i] = NULL;
         free(p1);
+    }
+    for (int i = 0; i < 100; i++) {
+        CreateBullet *p2 = bullet1[i];
+        bullet1[i] = NULL;
+        free(p2);
     }
     free(p);
 }

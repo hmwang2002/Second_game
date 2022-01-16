@@ -106,6 +106,39 @@ build createenemy.exe: C_EXECUTABLE_LINKER__createenemy_Debug CMakeFiles/createe
   TARGET_IMPLIB = libcreateenemy.dll.a
   TARGET_PDB = createenemy.exe.dbg
 
+# =============================================================================
+# Object build statements for EXECUTABLE target bullet
+
+
+#############################################
+# Order-only phony target for bullet
+
+build cmake_object_order_depends_target_bullet: phony || CMakeFiles/bullet.dir
+
+build CMakeFiles/bullet.dir/bullet.c.obj: C_COMPILER__bullet_Debug D$:/whm/game2/bullet.c || cmake_object_order_depends_target_bullet
+  DEP_FILE = CMakeFiles\bullet.dir\bullet.c.obj.d
+  FLAGS = -g -std=gnu11
+  OBJECT_DIR = CMakeFiles\bullet.dir
+  OBJECT_FILE_DIR = CMakeFiles\bullet.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target bullet
+
+
+#############################################
+# Link the executable bullet.exe
+
+build bullet.exe: C_EXECUTABLE_LINKER__bullet_Debug CMakeFiles/bullet.dir/bullet.c.obj
+  FLAGS = -g
+  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = CMakeFiles\bullet.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = bullet.exe
+  TARGET_IMPLIB = libbullet.dll.a
+  TARGET_PDB = bullet.exe.dbg
+
 
 #############################################
 # Utility command for edit_cache
@@ -132,6 +165,8 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
+build bullet: phony bullet.exe
+
 build createenemy: phony createenemy.exe
 
 build game2: phony game2.exe
@@ -144,7 +179,7 @@ build game2: phony game2.exe
 #############################################
 # Folder: D:/whm/game2/cmake-build-debug
 
-build all: phony game2.exe createenemy.exe
+build all: phony game2.exe createenemy.exe bullet.exe
 
 # =============================================================================
 # Built-in targets

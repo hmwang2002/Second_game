@@ -1,4 +1,5 @@
 D:/whm/game2/cmake-build-debug/CMakeFiles/game2.dir
 D:/whm/game2/cmake-build-debug/CMakeFiles/createenemy.dir
+D:/whm/game2/cmake-build-debug/CMakeFiles/bullet.dir
 D:/whm/game2/cmake-build-debug/CMakeFiles/edit_cache.dir
 D:/whm/game2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
