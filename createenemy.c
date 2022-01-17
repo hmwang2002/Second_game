@@ -19,3 +19,12 @@ CreateEnemy *create_level1(){
     enemy->status = 1;
     return enemy;
 }
+CreateEnemy *create_level2(){
+    srand((unsigned) time(NULL));
+    CreateEnemy *enemy = malloc(sizeof(CreateEnemy));
+    enemy->x = rand() * rand() * rand() % 800;
+    enemy->y = 0;
+    enemy->hp = 50;
+    enemy->status = 1;
+    return enemy;
+}
