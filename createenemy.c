@@ -3,12 +3,21 @@
 //
 #include <stdlib.h>
 #include <time.h>
+
 typedef struct createEnemy{
     int x;
     int y;
     int hp;
     int status;
 } CreateEnemy;
+
+typedef struct createEnemy2{
+    int x;
+    int y;
+    int hp;
+    int reload;
+    int status;
+} CreateEnemy2;
 
 CreateEnemy *create_level1(){
     srand((unsigned )time(NULL));
@@ -19,12 +28,13 @@ CreateEnemy *create_level1(){
     enemy->status = 1;
     return enemy;
 }
-CreateEnemy *create_level2(){
+CreateEnemy2 *create_level2(){
     srand((unsigned) time(NULL));
-    CreateEnemy *enemy = malloc(sizeof(CreateEnemy));
+    CreateEnemy2 *enemy = malloc(sizeof(CreateEnemy));
     enemy->x = rand() * rand() * rand() % 800;
     enemy->y = 0;
     enemy->hp = 50;
+    enemy->reload = 0;
     enemy->status = 1;
     return enemy;
 }

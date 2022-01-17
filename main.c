@@ -16,6 +16,7 @@
 #define Enemy2_File "dj1.png"
 #define Enemy2_Destroy_File "dj1(1).png"
 #define Bullet1_File "bullet1.png"
+#define Enemy_Bullet1_File "bullet2.png"
 
 int background_speed = 2;
 int plane_speed = 8;
@@ -60,11 +61,16 @@ CreateEnemy *enemy1[50];
 
 SDL_Texture *Enemy2Texture = NULL;
 SDL_Rect Enemy2Rect = {0,0,100,100};
-CreateEnemy *enemy2[50];
+CreateEnemy2 *enemy2[50];
 
 SDL_Texture *Bullet_1_Texture = NULL;
 SDL_Rect Bullet_1_Rect;
 CreateBullet *bullet1[100];
+
+SDL_Texture *EnemyBullet1_Texture = NULL;
+SDL_Rect EnemyBullet1_Rect;
+CreateBullet *EnemyBullet1[100];
+
 int reload_bullet1;
 
 void Quit();
@@ -73,12 +79,16 @@ void LOAD();
 void BattlefieldLoad();
 void Initialize_my_plane(Player *Player_main);
 void shoot(Player *Player_main);
+void Enemy_shoot1(CreateEnemy2 *enemy);
 void Enemy1_level1(int *score);
 void Enemy2_level2(int *score);
+void Enemy_Bullet1_Fly(Player *Player_main);
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1 ,
                      Player *p);
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy);
-bool Is_Bombed1(CreateBullet *bullet,CreateEnemy *enemy);
+bool Is_Bombed1(CreateBullet *bullet,CreateEnemy2 *enemy);
+bool Is_Attacked1(Player *Player_main, CreateBullet *Enemy_bullet1);
+
 int main(int argc, char *argv[])
 {
     TTF_Init();
@@ -160,11 +170,14 @@ void BattlefieldLoad(){
     Bullet_1_Rect.h = 11;
     Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet1_File);
 
+    EnemyBullet1_Texture = IMG_LoadTexture(Renderer,Enemy_Bullet1_File);
+    EnemyBullet1_Rect.w = 5;
+    EnemyBullet1_Rect.h = 11;
+
     Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
     Enemy2Texture = IMG_LoadTexture(Renderer,Enemy2_File);
     int score = 0;
     char score_[100] = {0};
-    int Hp = 100;
     char Hp_[3] = {0};
     SDL_Surface *Battlefield = NULL;
     SDL_Texture *BattlefieldTexture = NULL;
@@ -209,7 +222,7 @@ void BattlefieldLoad(){
         HPRect.y = 65;
         HPRect.w = 40;
         HPRect.h = 60;
-        itoa(Hp,Hp_,10);
+        itoa(Player_main->HP,Hp_,10);
         HP_Score = TTF_RenderUTF8_Blended(ScoreFont,Hp_,FontColor);
         HP_ScoreTexture = SDL_CreateTextureFromSurface(Renderer,HP_Score);
         HP_Score_Rect.x = 700;
@@ -235,8 +248,11 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
         shoot(Player_main);
-        if(score >= 0 && score <= 400)Player_main->level = 2;
-
+        Enemy_Bullet1_Fly(Player_main);
+        if(score >= 200 && score <= 400)Player_main->level = 2;
+        /**
+         * 升级
+         */
         Enemy1_level1(&score);
         if(Player_main->level >= 2){
             Enemy2_level2(&score);
@@ -374,6 +390,8 @@ void shoot(Player *Player_main){
     }
 
 }
+
+
 void Enemy1_level1( int *score){
     if(whether_create_enemy1 == 0){
         for (int i = 0; i < 50; i++) {
@@ -437,6 +455,9 @@ void Enemy2_level2( int *score){
         for (int i = 0; i < 50; i++) {
             if(enemy2[i] == NULL){
                 enemy2[i] = create_level2();
+                if(enemy2[i]->x <= 50 ){
+                    enemy2[i]->x += 100;
+                }
                 break;
             }
         }
@@ -449,14 +470,15 @@ void Enemy2_level2( int *score){
             if(enemy2[i]->x <= 750){
                 Enemy2Rect.x = enemy2[i]->x;
             }else{
-                enemy2[i]->x -= 150;
+                enemy2[i]->x -= 250;
                 Enemy2Rect.x = enemy2[i]->x;
             }
             Enemy2Rect.y = enemy2[i]->y;
             enemy2[i]->y += enemy2_speed;
             SDL_RenderCopy(Renderer,Enemy2Texture,NULL,&Enemy2Rect);
+            Enemy_shoot1(enemy2[i]);
         }else if(enemy2[i] != NULL && enemy2[i]->y > 800){
-            CreateEnemy *p = enemy2[i];
+            CreateEnemy2 *p = enemy2[i];
             enemy2[i] = NULL;
             free(p);
         }else if(enemy2[i] != NULL && enemy2[i]->status == 0){
@@ -467,7 +489,7 @@ void Enemy2_level2( int *score){
             Enemy2Texture = IMG_LoadTexture(Renderer,Enemy2_File);
             enemy2[i]->status = -1;
         }else if(enemy2[i] != NULL && enemy2[i]->status == -1){
-            CreateEnemy *clear_enemy = enemy2[i];
+            CreateEnemy2 *clear_enemy = enemy2[i];
             enemy2[i] = NULL;
             free(clear_enemy);
             *score += 20;
@@ -478,8 +500,8 @@ void Enemy2_level2( int *score){
         if(enemy2[i] != NULL){
             for (int j = 0; j < 100; j++) {
                 if(bullet1[j] != NULL && Is_Bombed1(bullet1[j],enemy2[i]) && enemy2[i] ->status == 1){
-                    enemy2[i]->hp -= 10;
-                    if(enemy2[i]->hp == 0){
+                    enemy2[i]->hp -= 20;
+                    if(enemy2[i]->hp <= 0){
                         enemy2[i]->status = 0;
                     }
                     CreateBullet *clear_bullet = bullet1[j];
@@ -492,6 +514,45 @@ void Enemy2_level2( int *score){
 
     }
 }
+
+void Enemy_shoot1(CreateEnemy2 *enemy){
+    if(enemy->reload == 0){
+        for (int i = 0; i < 100; i++) {
+            if(EnemyBullet1[i] == NULL){
+                EnemyBullet1[i] = CreateBullet_1();
+                EnemyBullet1[i]->x = enemy->x + Enemy2Rect.w / 2;
+                EnemyBullet1[i]->y = enemy->y + Enemy2Rect.h;
+                EnemyBullet1_Rect.x = EnemyBullet1[i]->x;
+                EnemyBullet1_Rect.y = EnemyBullet1[i]->y;
+                SDL_RenderCopy(Renderer,EnemyBullet1_Texture,NULL,&EnemyBullet1_Rect);
+                break;
+            }
+        }
+        enemy->reload = 40;
+    }else{
+        enemy->reload --;
+    }
+
+}
+
+void Enemy_Bullet1_Fly(Player *Player_main){
+    for (int i = 0; i < 100; i++) {
+        if(EnemyBullet1[i] != NULL && EnemyBullet1[i]->y <= 800 && !Is_Attacked1(Player_main,EnemyBullet1[i])){
+            EnemyBullet1[i]->y += Enemy_Bullet_Speed1 ;
+            EnemyBullet1_Rect.x = EnemyBullet1[i]->x;
+            EnemyBullet1_Rect.y = EnemyBullet1[i]->y;
+            SDL_RenderCopy(Renderer,EnemyBullet1_Texture,NULL,&EnemyBullet1_Rect);
+        }else if(EnemyBullet1[i] != NULL && EnemyBullet1[i]->y > 800){
+            free(EnemyBullet1[i]);
+            EnemyBullet1[i] = NULL;
+        }else if(EnemyBullet1[i] != NULL && Is_Attacked1(Player_main,EnemyBullet1[i])){
+            Player_main->HP -= 5;
+            free(EnemyBullet1[i]);
+            EnemyBullet1[i] = NULL;
+        }
+    }
+}
+
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy){
     if(bullet->x >= enemy->x && bullet->x <= enemy->x + Enemy1Rect.w
     && bullet->y >= enemy->y && bullet->y <= enemy->y + Enemy1Rect.h){
@@ -500,7 +561,7 @@ bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy){
         return 0;
     }
 }
-bool Is_Bombed1(CreateBullet *bullet,CreateEnemy *enemy){
+bool Is_Bombed1(CreateBullet *bullet,CreateEnemy2 *enemy){
     if(bullet->x >= enemy->x && bullet->x <= enemy->x + Enemy2Rect.w
        && bullet->y >= enemy->y && bullet->y <= enemy->y + Enemy2Rect.h){
         return 1;
@@ -508,6 +569,16 @@ bool Is_Bombed1(CreateBullet *bullet,CreateEnemy *enemy){
         return 0;
     }
 }
+
+bool Is_Attacked1(Player *Player_main, CreateBullet *Enemy_bullet1){
+    if(Enemy_bullet1->x >= Player_main->x && Enemy_bullet1->x <= Player_main->x + PlayerRect.w
+       && Enemy_bullet1->y >= Player_main->y && Enemy_bullet1->y <= Player_main->y + PlayerRect.h){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1
                      ,Player *p){
     SDL_FreeSurface(Battlefield);

@@ -9,6 +9,7 @@ typedef struct createBullet{
 } CreateBullet;
 
 int bullet_speed = 8;
+int Enemy_Bullet_Speed1 = 6;
 CreateBullet *CreateBullet_1(){
     CreateBullet *bullet = malloc(sizeof(CreateBullet));
     bullet->level = 1;
