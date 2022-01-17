@@ -12,6 +12,7 @@
 #define Plane_File "myplane.png"
 #define FrameRate 35
 #define Enemy1_File "enemy1.png"
+#define Enemy1_Destroy_File "enemy1_down2.png"
 #define Bullet1_File "bullet1.png"
 
 int background_speed = 2;
@@ -50,7 +51,7 @@ SDL_Color FontColor = {255,10,10,255};//红色
 SDL_Texture *PlayerTexture = NULL;
 SDL_Rect PlayerRect;
 SDL_Texture *Enemy1Texture = NULL;
-SDL_Rect Enemy1Rect;
+SDL_Rect Enemy1Rect = {0,0,50,50};
 CreateEnemy *enemy1[50];
 
 SDL_Texture *Bullet_1_Texture = NULL;
@@ -226,23 +227,7 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
-        for (int i = 0; i < 50; i++) {
-            if(enemy1[i] != NULL){
-                for (int j = 0; j < 100; j++) {
-                    if(bullet1[j] != NULL && Is_Bombed(bullet1[j],enemy1[i])){
-                            CreateEnemy *clear_enemy = enemy1[i];
-                            enemy1[i] = NULL;
-                            free(clear_enemy);
-                            CreateBullet *clear_bullet = bullet1[j];
-                            bullet1[j] = NULL;
-                            free(clear_bullet);
-                            score += 10;
-                            break;
-                    }
-                }
-            }
 
-        }
         if(whether_create_enemy1 == 0){
             for (int i = 0; i < 50; i++) {
                 if(enemy1[i] == NULL){
@@ -250,26 +235,36 @@ void BattlefieldLoad(){
                     break;
                 }
             }
-            whether_create_enemy1 = 150;
+            whether_create_enemy1 = 100;
         }else{
             whether_create_enemy1--;
         }
         for (int i = 0; i < 50; i++) {
-            if(enemy1[i] != NULL && enemy1[i]->y <= 800){
+            if(enemy1[i] != NULL && enemy1[i]->y <= 800 && enemy1[i]->status == 1){
                 if(enemy1[i]->x <= 750){
                     Enemy1Rect.x = enemy1[i]->x;
                 }else{
-                    Enemy1Rect.x = enemy1[i]->x - 100;
+                    enemy1[i]->x -= 100;
+                    Enemy1Rect.x = enemy1[i]->x;
                 }
                 Enemy1Rect.y = enemy1[i]->y;
                 enemy1[i]->y += enemy1_speed;
-                Enemy1Rect.w = 50;
-                Enemy1Rect.h = 50;
                 SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
             }else if(enemy1[i] != NULL && enemy1[i]->y > 800){
                 CreateEnemy *p = enemy1[i];
                 enemy1[i] = NULL;
                 free(p);
+            }else if(enemy1[i] != NULL && enemy1[i]->status == 0){
+                Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_Destroy_File);
+                Enemy1Rect.x = enemy1[i]->x;
+                Enemy1Rect.y = enemy1[i]->y;
+                SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
+                Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
+                enemy1[i]->status = -1;
+            }else if(enemy1[i] != NULL && enemy1[i]->status == -1){
+                CreateEnemy *clear_enemy = enemy1[i];
+                enemy1[i] = NULL;
+                free(clear_enemy);
             }
         }
         if(reload_bullet1 == 0){
@@ -300,6 +295,22 @@ void BattlefieldLoad(){
             }
         }
 
+        for (int i = 0; i < 50; i++) {
+            if(enemy1[i] != NULL){
+                for (int j = 0; j < 100; j++) {
+                    if(bullet1[j] != NULL && Is_Bombed(bullet1[j],enemy1[i]) && enemy1[i] ->status == 1){
+                        enemy1[i]->hp -= 10;
+                        enemy1[i]->status = 0;
+                        CreateBullet *clear_bullet = bullet1[j];
+                        bullet1[j] = NULL;
+                        free(clear_bullet);
+                        score += 10;
+                        break;
+                    }
+                }
+            }
+
+        }
 
 
         PlayerRect.x = Player_main->x;
