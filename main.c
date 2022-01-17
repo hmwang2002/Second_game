@@ -63,6 +63,8 @@ void Quit();
 void LOAD();
 
 void BattlefieldLoad();
+void Initialize_my_plane(Player *Player_main);
+void Enemy1_level1(Player *Player_main, int *score);
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1 ,
                      Player *p);
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy);
@@ -140,21 +142,14 @@ void LOAD(){
 
 void BattlefieldLoad(){
     Player *Player_main = malloc(sizeof(Player));
-    Player_main->HP = 100;
-    Player_main->x = 370;
-    Player_main->y = 740;
-    Player_main->level = 1;
-    PlayerTexture = IMG_LoadTexture(Renderer,Plane_File);
-    PlayerRect.x = Player_main->x;
-    PlayerRect.y = Player_main->y;
-    PlayerRect.w = 60;
-    PlayerRect.h = 60;
+    Initialize_my_plane(Player_main);
+    /**
+     * 玩家飞机的初始化
+     */
     Bullet_1_Rect.w = 5;
     Bullet_1_Rect.h = 11;
     Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet1_File);
-    /**
-     * 回头封装成初始化函数
-     */
+
     Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
     int score = 0;
     char score_[100] = {0};
@@ -221,6 +216,7 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,BattlefieldTexture_1,NULL,&BattlefieldRect_1);
         /**
          * copy的顺序决定了覆盖的优先级
+         * 解决了地图滚动的问题
          */
 
         SDL_RenderCopy(Renderer,ScoreTexture,NULL,&ScoreRect);
@@ -228,89 +224,7 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
 
-        if(whether_create_enemy1 == 0){
-            for (int i = 0; i < 50; i++) {
-                if(enemy1[i] == NULL){
-                    enemy1[i] = create_level1();
-                    break;
-                }
-            }
-            whether_create_enemy1 = 100;
-        }else{
-            whether_create_enemy1--;
-        }
-        for (int i = 0; i < 50; i++) {
-            if(enemy1[i] != NULL && enemy1[i]->y <= 800 && enemy1[i]->status == 1){
-                if(enemy1[i]->x <= 750){
-                    Enemy1Rect.x = enemy1[i]->x;
-                }else{
-                    enemy1[i]->x -= 100;
-                    Enemy1Rect.x = enemy1[i]->x;
-                }
-                Enemy1Rect.y = enemy1[i]->y;
-                enemy1[i]->y += enemy1_speed;
-                SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
-            }else if(enemy1[i] != NULL && enemy1[i]->y > 800){
-                CreateEnemy *p = enemy1[i];
-                enemy1[i] = NULL;
-                free(p);
-            }else if(enemy1[i] != NULL && enemy1[i]->status == 0){
-                Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_Destroy_File);
-                Enemy1Rect.x = enemy1[i]->x;
-                Enemy1Rect.y = enemy1[i]->y;
-                SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
-                Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
-                enemy1[i]->status = -1;
-            }else if(enemy1[i] != NULL && enemy1[i]->status == -1){
-                CreateEnemy *clear_enemy = enemy1[i];
-                enemy1[i] = NULL;
-                free(clear_enemy);
-            }
-        }
-        if(reload_bullet1 == 0){
-            for (int i = 0; i < 100; i++) {
-                if(bullet1[i] == NULL){
-                    bullet1[i] = CreateBullet_1();
-                    bullet1[i]->x = Player_main->x + PlayerRect.w / 2;
-                    bullet1[i]->y = Player_main->y;
-                    break;
-                }
-            }
-            reload_bullet1 = 10;
-        }else{
-            reload_bullet1--;
-        }
-        for (int i = 0; i < 100; i++) {
-            if(bullet1[i] != NULL){
-                if(bullet1[i]->y >= 0){
-                    bullet1[i]->y -= bullet_speed;
-                    Bullet_1_Rect.x = bullet1[i]->x;
-                    Bullet_1_Rect.y = bullet1[i]->y;
-                    SDL_RenderCopy(Renderer,Bullet_1_Texture,NULL,&Bullet_1_Rect);
-                }else{
-                    CreateBullet *p_bullet = bullet1[i];
-                    bullet1[i] = NULL;
-                    free(p_bullet);
-                }
-            }
-        }
-
-        for (int i = 0; i < 50; i++) {
-            if(enemy1[i] != NULL){
-                for (int j = 0; j < 100; j++) {
-                    if(bullet1[j] != NULL && Is_Bombed(bullet1[j],enemy1[i]) && enemy1[i] ->status == 1){
-                        enemy1[i]->hp -= 10;
-                        enemy1[i]->status = 0;
-                        CreateBullet *clear_bullet = bullet1[j];
-                        bullet1[j] = NULL;
-                        free(clear_bullet);
-                        score += 10;
-                        break;
-                    }
-                }
-            }
-
-        }
+        Enemy1_level1(Player_main,&score);
 
 
         PlayerRect.x = Player_main->x;
@@ -402,11 +316,105 @@ void BattlefieldLoad(){
         }
     }
 
-    /**
-     * 实现滚动？将原图搞的很大，然后修改x,y
-     */
 
 }
+void Initialize_my_plane(Player *Player_main){
+    Player_main->HP = 100;
+    Player_main->x = 370;
+    Player_main->y = 740;
+    Player_main->level = 1;
+    PlayerTexture = IMG_LoadTexture(Renderer,Plane_File);
+    PlayerRect.x = Player_main->x;
+    PlayerRect.y = Player_main->y;
+    PlayerRect.w = 60;
+    PlayerRect.h = 60;
+}
+void Enemy1_level1(Player *Player_main, int *score){
+    if(whether_create_enemy1 == 0){
+        for (int i = 0; i < 50; i++) {
+            if(enemy1[i] == NULL){
+                enemy1[i] = create_level1();
+                break;
+            }
+        }
+        whether_create_enemy1 = 100;
+    }else{
+        whether_create_enemy1--;
+    }
+    for (int i = 0; i < 50; i++) {
+        if(enemy1[i] != NULL && enemy1[i]->y <= 800 && enemy1[i]->status == 1){
+            if(enemy1[i]->x <= 750){
+                Enemy1Rect.x = enemy1[i]->x;
+            }else{
+                enemy1[i]->x -= 100;
+                Enemy1Rect.x = enemy1[i]->x;
+            }
+            Enemy1Rect.y = enemy1[i]->y;
+            enemy1[i]->y += enemy1_speed;
+            SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
+        }else if(enemy1[i] != NULL && enemy1[i]->y > 800){
+            CreateEnemy *p = enemy1[i];
+            enemy1[i] = NULL;
+            free(p);
+        }else if(enemy1[i] != NULL && enemy1[i]->status == 0){
+            Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_Destroy_File);
+            Enemy1Rect.x = enemy1[i]->x;
+            Enemy1Rect.y = enemy1[i]->y;
+            SDL_RenderCopy(Renderer,Enemy1Texture,NULL,&Enemy1Rect);
+            Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
+            enemy1[i]->status = -1;
+        }else if(enemy1[i] != NULL && enemy1[i]->status == -1){
+            CreateEnemy *clear_enemy = enemy1[i];
+            enemy1[i] = NULL;
+            free(clear_enemy);
+        }
+    }
+    if(reload_bullet1 == 0){
+        for (int i = 0; i < 100; i++) {
+            if(bullet1[i] == NULL){
+                bullet1[i] = CreateBullet_1();
+                bullet1[i]->x = Player_main->x + PlayerRect.w / 2;
+                bullet1[i]->y = Player_main->y;
+                break;
+            }
+        }
+        reload_bullet1 = 10;
+    }else{
+        reload_bullet1--;
+    }
+    for (int i = 0; i < 100; i++) {
+        if(bullet1[i] != NULL){
+            if(bullet1[i]->y >= 0){
+                bullet1[i]->y -= bullet_speed;
+                Bullet_1_Rect.x = bullet1[i]->x;
+                Bullet_1_Rect.y = bullet1[i]->y;
+                SDL_RenderCopy(Renderer,Bullet_1_Texture,NULL,&Bullet_1_Rect);
+            }else{
+                CreateBullet *p_bullet = bullet1[i];
+                bullet1[i] = NULL;
+                free(p_bullet);
+            }
+        }
+    }
+
+    for (int i = 0; i < 50; i++) {
+        if(enemy1[i] != NULL){
+            for (int j = 0; j < 100; j++) {
+                if(bullet1[j] != NULL && Is_Bombed(bullet1[j],enemy1[i]) && enemy1[i] ->status == 1){
+                    enemy1[i]->hp -= 10;
+                    enemy1[i]->status = 0;
+                    CreateBullet *clear_bullet = bullet1[j];
+                    bullet1[j] = NULL;
+                    free(clear_bullet);
+                    *score += 10;
+                    break;
+                }
+            }
+        }
+
+    }
+}
+
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy){
     if(bullet->x >= enemy->x && bullet->x <= enemy->x + Enemy1Rect.w
     && bullet->y >= enemy->y && bullet->y <= enemy->y + Enemy1Rect.h){
