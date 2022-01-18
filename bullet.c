@@ -15,3 +15,9 @@ CreateBullet *CreateBullet_1(){
     bullet->level = 1;
     return bullet;
 }
+
+CreateBullet *CreateBullet_2(){
+    CreateBullet *bullet = malloc(sizeof(CreateBullet));
+    bullet->level = 2;
+    return bullet;
+}
