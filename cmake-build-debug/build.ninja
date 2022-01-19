@@ -150,6 +150,39 @@ build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
 
 build edit_cache: phony CMakeFiles/edit_cache.util
 
+# =============================================================================
+# Object build statements for EXECUTABLE target Prop
+
+
+#############################################
+# Order-only phony target for Prop
+
+build cmake_object_order_depends_target_Prop: phony || CMakeFiles/Prop.dir
+
+build CMakeFiles/Prop.dir/Prop.c.obj: C_COMPILER__Prop_Debug D$:/whm/game2/Prop.c || cmake_object_order_depends_target_Prop
+  DEP_FILE = CMakeFiles\Prop.dir\Prop.c.obj.d
+  FLAGS = -g -std=gnu11
+  OBJECT_DIR = CMakeFiles\Prop.dir
+  OBJECT_FILE_DIR = CMakeFiles\Prop.dir
+
+
+# =============================================================================
+# Link build statements for EXECUTABLE target Prop
+
+
+#############################################
+# Link the executable Prop.exe
+
+build Prop.exe: C_EXECUTABLE_LINKER__Prop_Debug CMakeFiles/Prop.dir/Prop.c.obj
+  FLAGS = -g
+  LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
+  OBJECT_DIR = CMakeFiles\Prop.dir
+  POST_BUILD = cd .
+  PRE_LINK = cd .
+  TARGET_FILE = Prop.exe
+  TARGET_IMPLIB = libProp.dll.a
+  TARGET_PDB = Prop.exe.dbg
+
 
 #############################################
 # Utility command for rebuild_cache
@@ -165,6 +198,8 @@ build rebuild_cache: phony CMakeFiles/rebuild_cache.util
 # =============================================================================
 # Target aliases.
 
+build Prop: phony Prop.exe
+
 build bullet: phony bullet.exe
 
 build createenemy: phony createenemy.exe
@@ -179,7 +214,7 @@ build game2: phony game2.exe
 #############################################
 # Folder: D:/whm/game2/cmake-build-debug
 
-build all: phony game2.exe createenemy.exe bullet.exe
+build all: phony game2.exe createenemy.exe bullet.exe Prop.exe
 
 # =============================================================================
 # Built-in targets

@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include "createenemy.c"
 #include "bullet.c"
+#include "Prop.c"
 #define Width 800
 #define Height 800
 #define Plane_File "myplane.png"
@@ -20,6 +21,11 @@
 #define Enemy3_File "dj2.png"
 #define Enemy3_Destroy_File "dj2(2).png"
 #define EnemyBullet2_File "enemy_bullet2.png"
+#define Blood_File "bloodadd.png"
+#define Sapphire_File "dlw.png"
+#define Gold_File "jinbi.png"
+#define Plane2_File "fj.png"
+#define Bullet2_File "mybullet2.png"
 
 int background_speed = 2;
 int plane_speed = 8;
@@ -29,6 +35,11 @@ int enemy3_speed = 3;
 int whether_create_enemy1 = 0;
 int whether_create_enemy2 = 0;
 int whether_create_enemy3 = 0;
+int whether_update_plane = 0;
+int whether_create_blood = 0;
+int count_of_Sapphire = 0;
+int count_of_gold = 0;
+
 typedef struct player{
     int x;
     int y;
@@ -84,6 +95,14 @@ SDL_Texture *EnemyBullet2_Texture = NULL;
 SDL_Rect EnemyBullet2_Rect = {0,0,20,44};
 CreateBullet *EnemyBullet2[100];
 
+SDL_Texture *Blood_Texture = NULL;
+SDL_Rect Blood_Rect = {0,0,20,20};
+SDL_Texture *Sapphire_Texture = NULL;
+SDL_Rect Sapphire_Rect = {0,0,25,25};
+SDL_Texture *Gold_Texture = NULL;
+SDL_Rect Gold_Rect = {0,0,25,25};
+CreateProp *props[50];
+
 int reload_bullet1;
 
 void Quit();
@@ -102,10 +121,12 @@ void Enemy_Bullet1_Fly(Player *Player_main);
 void Enemy_Bullet2_Fly(Player *Player_main);
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1 ,
                      Player *p);
+void PropsFly(Player *Player_main);
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy);
 bool Is_Bombed1(CreateBullet *bullet,CreateEnemy2 *enemy);
 bool Is_Attacked1(Player *Player_main, CreateBullet *Enemy_bullet1);
 bool Is_Bombed2(CreateBullet *bullet,CreateEnemy3 *enemy);
+bool GetProps(CreateProp *prop, Player *Player_main);
 
 int main(int argc, char *argv[])
 {
@@ -197,6 +218,9 @@ void BattlefieldLoad(){
     Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
     Enemy2Texture = IMG_LoadTexture(Renderer,Enemy2_File);
     Enemy3Texture = IMG_LoadTexture(Renderer,Enemy3_File);
+    Gold_Texture = IMG_LoadTexture(Renderer,Gold_File);
+    Sapphire_Texture = IMG_LoadTexture(Renderer,Sapphire_File);
+    Blood_Texture = IMG_LoadTexture(Renderer,Blood_File);
 
     int score = 0;
     char score_[100] = {0};
@@ -264,11 +288,32 @@ void BattlefieldLoad(){
          * copy的顺序决定了覆盖的优先级
          * 解决了地图滚动的问题
          */
+        if(count_of_gold == 4){
+            Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet2_File);
+            Bullet_1_Rect.w = 20;
+            Bullet_1_Rect.h = 44;
+            for (int i = 0; i < 100; i++) {
+                if(bullet1[i] != NULL){
+                    bullet1[i]->level = 2;
+                }
+            }
+        }
+        if(count_of_Sapphire == 4)whether_update_plane = 1;
+        if(whether_update_plane == 1){
+            PlayerTexture = IMG_LoadTexture(Renderer,Plane2_File);
+            PlayerRect.w = 80;
+            PlayerRect.h = 80;
+            plane_speed = 12;
+        }
+        if(score % 50 == 0){
+            whether_create_blood = 1;
+        }
 
         SDL_RenderCopy(Renderer,ScoreTexture,NULL,&ScoreRect);
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
+        PropsFly(Player_main);
         if(Player_main->level < 3){
             shoot(Player_main);
         }else{
@@ -509,6 +554,21 @@ void Enemy1_level1( int *score){
             Enemy1Texture = IMG_LoadTexture(Renderer,Enemy1_File);
             enemy1[i]->status = -1;
         }else if(enemy1[i] != NULL && enemy1[i]->status == -1){
+            if(whether_create_blood == 1){
+                int num = rand() % 30;
+                if(num <= 4){
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy1[i]->x;
+                            props[j]->y = enemy1[i]->y;
+                            props[j]->level = 1;
+                            break;
+                        }
+                    }
+                    whether_create_blood = 0;
+                }
+            }
             CreateEnemy *clear_enemy = enemy1[i];
             enemy1[i] = NULL;
             free(clear_enemy);
@@ -573,6 +633,61 @@ void Enemy2_level2( int *score){
             Enemy2Texture = IMG_LoadTexture(Renderer,Enemy2_File);
             enemy2[i]->status = -1;
         }else if(enemy2[i] != NULL && enemy2[i]->status == -1){
+            int ans = 0;
+            if(whether_create_blood == 1){
+                int num = rand() % 10;
+                if(num <= 4){
+                    ans = 1;
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy2[i]->x;
+                            props[j]->y = enemy2[i]->y;
+                            props[j]->level = 1;
+                            Blood_Rect.x = props[j]->x;
+                            Blood_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Blood_Texture,NULL,&Blood_Rect);
+                            break;
+                        }
+                    }
+                    whether_create_blood = 0;
+                }
+            }
+            if( ans == 0){
+                int num = rand() % 30;
+                if(num >= 5 && num <= 10){
+                    ans = 1;
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy2[i]->x;
+                            props[j]->y = enemy2[i]->y;
+                            props[j]->level = 2;
+                            Gold_Rect.x = props[j]->x;
+                            Gold_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Gold_Texture,NULL,&Gold_Rect);
+                            break;
+                        }
+                    }
+                }
+            }
+            if( ans == 0){
+                int num = rand() % 30;
+                if(num >= 24){
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy2[i]->x;
+                            props[j]->y = enemy2[i]->y;
+                            props[j]->level = 3;
+                            Sapphire_Rect.x = props[j]->x;
+                            Sapphire_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Sapphire_Texture,NULL,&Sapphire_Rect);
+                            break;
+                        }
+                    }
+                }
+            }
             CreateEnemy2 *clear_enemy = enemy2[i];
             enemy2[i] = NULL;
             free(clear_enemy);
@@ -636,6 +751,61 @@ void Enemy3_level3(int *score){
             Enemy3Texture = IMG_LoadTexture(Renderer,Enemy3_File);
             enemy3[i]->status = -1;
         }else if(enemy3[i] != NULL && enemy3[i]->status == -1){
+            int ans = 0;
+            if(whether_create_blood == 1){
+                int num = rand() % 20;
+                if(num <= 4){
+                    ans = 1;
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy3[i]->x;
+                            props[j]->y = enemy3[i]->y;
+                            props[j]->level = 1;
+                            Blood_Rect.x = props[j]->x;
+                            Blood_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Blood_Texture,NULL,&Blood_Rect);
+                            break;
+                        }
+                    }
+                    whether_create_blood = 0;
+                }
+            }
+            if(ans == 0){
+                int num = rand() % 20;
+                if(num >= 5 && num <= 13){
+                    ans = 1;
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy3[i]->x;
+                            props[j]->y = enemy3[i]->y;
+                            props[j]->level = 2;
+                            Gold_Rect.x = props[j]->x;
+                            Gold_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Gold_Texture,NULL,&Gold_Rect);
+                            break;
+                        }
+                    }
+                }
+            }
+            if(ans == 0){
+                int num = rand() % 20;
+                if(num >= 14){
+                    for (int j = 0; j < 50; j++) {
+                        if(props[j] == NULL){
+                            props[j] = prop();
+                            props[j]->x = enemy3[i]->x;
+                            props[j]->y = enemy3[i]->y;
+                            props[j]->level = 3;
+                            Sapphire_Rect.x = props[j]->x;
+                            Sapphire_Rect.y = props[j]->y;
+                            SDL_RenderCopy(Renderer,Sapphire_Texture,NULL,&Sapphire_Rect);
+                            break;
+                        }
+                    }
+                }
+            }
             free(enemy3[i]);
             enemy3[i] = NULL;
             *score += 50;
@@ -753,6 +923,42 @@ void Enemy_Bullet2_Fly(Player *Player_main){
     }
 }
 
+void PropsFly(Player *Player_main){
+    for (int i = 0; i < 50; i++) {
+        if(props[i] != NULL && props[i]->y <= 800 && !GetProps(props[i],Player_main)){
+            props[i]->y += 4;
+            if(props[i]->level == 1){
+                Blood_Rect.x = props[i]->x;
+                Blood_Rect.y = props[i]->y;
+                SDL_RenderCopy(Renderer,Blood_Texture,NULL,&Blood_Rect);
+            }else if(props[i]->level == 2){
+                Gold_Rect.x = props[i]->x;
+                Gold_Rect.y = props[i]->y;
+                SDL_RenderCopy(Renderer,Gold_Texture,NULL,&Gold_Rect);
+            }else{
+                Sapphire_Rect.x = props[i]->x;
+                Sapphire_Rect.y = props[i]->y;
+                SDL_RenderCopy(Renderer,Sapphire_Texture,NULL,&Sapphire_Rect);
+            }
+        }else if(props[i] != NULL && props[i]->y > 800){
+            free(props[i]);
+            props[i] = NULL;
+        } else if(props[i] != NULL && GetProps(props[i],Player_main)){
+            if(props[i]->level == 1){
+                Player_main->HP += 20;
+                if(Player_main->HP > 100)Player_main->HP = 100;
+            }else if(props[i]->level == 2){
+                count_of_gold++;
+            }else{
+                count_of_Sapphire++;
+            }
+            free(props[i]);
+            props[i] = NULL;
+        }
+    }
+
+}
+
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy){
     if(bullet->x >= enemy->x && bullet->x <= enemy->x + Enemy1Rect.w
     && bullet->y >= enemy->y && bullet->y <= enemy->y + Enemy1Rect.h){
@@ -786,6 +992,14 @@ bool Is_Attacked1(Player *Player_main, CreateBullet *Enemy_bullet1){
         return 0;
     }
 }
+bool GetProps(CreateProp *prop, Player *Player_main){
+    if(prop->x >= Player_main->x && prop->x <= Player_main->x + PlayerRect.w &&
+    prop->y >= Player_main->y && prop->y <= Player_main->y + PlayerRect.h){
+        return 1;
+    } else{
+        return 0;
+    }
+}
 
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1
                      ,Player *p){
@@ -808,6 +1022,10 @@ void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, S
     for (int i = 0; i < 50; i++) {
         free(enemy3[i]);
         enemy3[i] = NULL;
+    }
+    for (int i = 0; i < 50; i++) {
+        free(props[i]);
+        props[i] = NULL;
     }
     free(p);
 }

@@ -4,5 +4,8 @@
     <file url="file://$PROJECT_DIR$/../参考/test1/Operate.h" charset="GBK" />
     <file url="file://$PROJECT_DIR$/../参考/test1/Plane.cpp" charset="GBK" />
     <file url="file://$PROJECT_DIR$/../参考/test1/PlaneEnemy.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/../参考/test1/Prop.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/../参考/test1/Resource.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/../参考/test1/Resource.h" charset="GBK" />
   </component>
 </project>

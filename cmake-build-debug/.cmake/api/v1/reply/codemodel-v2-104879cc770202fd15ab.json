@@ -17,7 +17,8 @@
 					[
 						0,
 						1,
-						2
+						2,
+						3
 					]
 				}
 			],
@@ -34,12 +35,20 @@
 					[
 						0,
 						1,
-						2
+						2,
+						3
 					]
 				}
 			],
 			"targets" : 
 			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Prop::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Prop-Debug-21e53273ae60ed579de4.json",
+					"name" : "Prop",
+					"projectIndex" : 0
+				},
 				{
 					"directoryIndex" : 0,
 					"id" : "bullet::@6890427a1f51a3e7e1df",
@@ -57,7 +66,7 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "game2::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-game2-Debug-d0c1288104c608689caa.json",
+					"jsonFile" : "target-game2-Debug-893c6f029b05165198b4.json",
 					"name" : "game2",
 					"projectIndex" : 0
 				}
