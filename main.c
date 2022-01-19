@@ -92,6 +92,7 @@ void LOAD();
 void BattlefieldLoad();
 void Initialize_my_plane(Player *Player_main);
 void shoot(Player *Player_main);
+void shoot1(Player *Player_main);
 void Enemy_shoot1(CreateEnemy2 *enemy);
 void Enemy_shoot2(CreateEnemy3 *enemy);
 void Enemy1_level1(int *score);
@@ -268,12 +269,15 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
-
-        shoot(Player_main);
-        if(Player_main->level >= 2){
+        if(Player_main->level < 3){
+            shoot(Player_main);
+        }else{
+            shoot1(Player_main);
+        }
+        if(Player_main->level >= 2 && Player_main->level < 4){
             Enemy_Bullet1_Fly(Player_main);
         }
-        if(Player_main->level >= 3){
+        if(Player_main->level == 3){
             Enemy_Bullet2_Fly(Player_main);
         }
 
@@ -425,6 +429,50 @@ void shoot(Player *Player_main){
 
 }
 
+void shoot1(Player *Player_main){
+    if(reload_bullet1 == 0){
+        int cnt = 3;
+        for (int i = 0; i < 100; i++) {
+            if(cnt == 0){
+                reload_bullet1 = 10;
+                break;
+            }
+            if(bullet1[i] == NULL && cnt == 3){
+                bullet1[i] = CreateBullet_1();
+                bullet1[i]->x = Player_main->x;
+                bullet1[i]->y = Player_main->y;
+                cnt--;
+            }
+            if(bullet1[i] == NULL && cnt == 2){
+                bullet1[i] = CreateBullet_1();
+                bullet1[i]->x = Player_main->x + PlayerRect.w / 2;
+                bullet1[i]->y = Player_main->y;
+                cnt--;
+            }
+            if(bullet1[i] == NULL && cnt == 1){
+                bullet1[i] = CreateBullet_1();
+                bullet1[i]->x = Player_main->x + PlayerRect.w;
+                bullet1[i]->y = Player_main->y;
+                cnt--;
+            }
+        }
+    }else{
+        reload_bullet1--;
+    }
+    for (int i = 0; i < 100; i++) {
+        if(bullet1[i] != NULL){
+            if(bullet1[i]->y >= 0){
+                bullet1[i]->y -= bullet_speed;
+                Bullet_1_Rect.x = bullet1[i]->x;
+                Bullet_1_Rect.y = bullet1[i]->y;
+                SDL_RenderCopy(Renderer,Bullet_1_Texture,NULL,&Bullet_1_Rect);
+            }else{
+                free(bullet1[i]);
+                bullet1[i] = NULL;
+            }
+        }
+    }
+}
 
 void Enemy1_level1( int *score){
     if(whether_create_enemy1 == 0){
@@ -434,7 +482,7 @@ void Enemy1_level1( int *score){
                 break;
             }
         }
-        whether_create_enemy1 = 100;
+        whether_create_enemy1 = 50;
     }else{
         whether_create_enemy1--;
     }
@@ -528,7 +576,7 @@ void Enemy2_level2( int *score){
             CreateEnemy2 *clear_enemy = enemy2[i];
             enemy2[i] = NULL;
             free(clear_enemy);
-            *score += 50;
+            *score += 20;
         }
     }
 
@@ -560,8 +608,8 @@ void Enemy3_level3(int *score){
         for (int i = 0; i < 50; i++) {
             if(enemy3[i] == NULL){
                 enemy3[i] = create_level3();
-                if(enemy3[i]->x >= 700){
-                    enemy3[i]->x -= 100;
+                if(enemy3[i]->x >= 600){
+                    enemy3[i]->x -= 250;
                 }
                 break;
             }
@@ -590,7 +638,7 @@ void Enemy3_level3(int *score){
         }else if(enemy3[i] != NULL && enemy3[i]->status == -1){
             free(enemy3[i]);
             enemy3[i] = NULL;
-            score += 50;
+            *score += 50;
         }
     }
 

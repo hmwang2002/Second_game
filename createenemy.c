@@ -52,7 +52,7 @@ CreateEnemy3 *create_level3(){
     CreateEnemy3 *enemy = malloc(sizeof(CreateEnemy3));
     enemy->x = rand() * rand() % 800;
     enemy->y = 0;
-    enemy->hp = 100;
+    enemy->hp = 300;
     enemy->reload = 0;
     enemy->status = 1;
     return enemy;
