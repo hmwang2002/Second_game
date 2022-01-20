@@ -1,7 +1,6 @@
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_image.h"
 #include "SDL2/SDL_ttf.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <stdbool.h>
@@ -26,7 +25,11 @@
 #define Gold_File "jinbi.png"
 #define Plane2_File "fj.png"
 #define Bullet2_File "mybullet2.png"
-
+#define Boss_File "dj3.png"
+#define Boss_Destroy_File "dj3(2).png"
+#define BossBullet_File "mybullet3.png"
+#define Player_Destroy_File "fj2.png"
+#define Player_Destroy_File1 "me_destroy_3.png"
 int background_speed = 2;
 int plane_speed = 8;
 int enemy1_speed = 4;
@@ -69,6 +72,11 @@ SDL_Rect HPRect;
 SDL_Rect HP_Score_Rect;
 SDL_Color FontColor = {255,10,10,255};//红色
 
+TTF_Font *FinalFont = NULL;
+SDL_Surface *FinalSurface = NULL;
+SDL_Texture *FinalTexture = NULL;
+SDL_Rect FinalRect;
+
 SDL_Texture *PlayerTexture = NULL;
 SDL_Rect PlayerRect;
 SDL_Texture *Enemy1Texture = NULL;
@@ -103,6 +111,16 @@ SDL_Texture *Gold_Texture = NULL;
 SDL_Rect Gold_Rect = {0,0,25,25};
 CreateProp *props[50];
 
+SDL_Texture *BossTexture = NULL;
+SDL_Rect BossRect = {0,0,300,300};
+SDL_Texture *BossBullet1Texture = NULL;
+SDL_Rect BossBullet1Rect = {0,0,20,44};
+SDL_Texture *BossBullet2Texture = NULL;
+SDL_Rect BossBullet2Rect = {0,0,40,88};
+CreateBullet *boss_bullet_1[100];
+CreateBullet *boss_bullet_2[200];
+Boss_ *boss;
+
 int reload_bullet1;
 
 void Quit();
@@ -122,11 +140,15 @@ void Enemy_Bullet2_Fly(Player *Player_main);
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1 ,
                      Player *p);
 void PropsFly(Player *Player_main);
+void Boss(Player *Player_main);
 bool Is_Bombed(CreateBullet *bullet, CreateEnemy *enemy);
 bool Is_Bombed1(CreateBullet *bullet,CreateEnemy2 *enemy);
 bool Is_Attacked1(Player *Player_main, CreateBullet *Enemy_bullet1);
 bool Is_Bombed2(CreateBullet *bullet,CreateEnemy3 *enemy);
 bool GetProps(CreateProp *prop, Player *Player_main);
+bool Is_Bombed_boss(CreateBullet *bullet);
+bool Is_Attacked_boss(Player *Player_main,CreateBullet *bullet);
+bool Is_Attacked_boss1(Player *Player_main,CreateBullet *bullet);
 
 int main(int argc, char *argv[])
 {
@@ -152,7 +174,6 @@ int main(int argc, char *argv[])
                     flag = 1;
                     break;
                 case SDL_MOUSEBUTTONDOWN:
-                    printf("%d , %d\n",event.button.x,event.button.y);
                     if(event.button.x >= 270 && event.button.x <= 510 &&
                     event.button.y >= 294 && event.button.y <= 392){
                         BattlefieldLoad();
@@ -205,6 +226,7 @@ void BattlefieldLoad(){
     /**
      * 玩家飞机的初始化
      */
+    boss = create_boss();
     Bullet_1_Rect.w = 5;
     Bullet_1_Rect.h = 11;
     Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet1_File);
@@ -221,6 +243,9 @@ void BattlefieldLoad(){
     Gold_Texture = IMG_LoadTexture(Renderer,Gold_File);
     Sapphire_Texture = IMG_LoadTexture(Renderer,Sapphire_File);
     Blood_Texture = IMG_LoadTexture(Renderer,Blood_File);
+    BossTexture = IMG_LoadTexture(Renderer,Boss_File);
+    BossBullet1Texture = IMG_LoadTexture(Renderer,EnemyBullet2_File);
+    BossBullet2Texture = IMG_LoadTexture(Renderer,BossBullet_File);
 
     int score = 0;
     char score_[100] = {0};
@@ -313,6 +338,11 @@ void BattlefieldLoad(){
         SDL_RenderCopy(Renderer,ScorePointTexture,NULL,&ScorePointRect);
         SDL_RenderCopy(Renderer,HPTexture,NULL,&HPRect);
         SDL_RenderCopy(Renderer,HP_ScoreTexture,NULL,&HP_Score_Rect);
+
+        PlayerRect.x = Player_main->x;
+        PlayerRect.y = Player_main->y;
+        SDL_RenderCopy(Renderer,PlayerTexture,NULL,&PlayerRect);
+
         PropsFly(Player_main);
         if(Player_main->level < 3){
             shoot(Player_main);
@@ -327,23 +357,67 @@ void BattlefieldLoad(){
         }
 
         if(score >= 200 && score <= 400)Player_main->level = 2;
-        if(score > 400 && score <= 1000)Player_main->level = 3;
+        if(score > 400 && score < 1500)Player_main->level = 3;
+        if(score >= 1500)Player_main->level = 4;
         /**
          * 升级
          */
          if(Player_main->level < 3){
              Enemy1_level1(&score);
          }
-        if(Player_main->level >= 2){
+        if(Player_main->level >= 2 && Player_main->level < 4){
             Enemy2_level2(&score);
         }
-        if(Player_main->level >= 3){
+        if(Player_main->level == 3){
             Enemy3_level3(&score);
         }
+        if(Player_main->level == 4){
+            BossRect.x = boss->x;
+            BossRect.y = boss->y;
+            SDL_RenderCopy(Renderer,BossTexture,NULL,&BossRect);
+            Boss(Player_main);
+            if(boss->status == 0){
+                BossTexture = IMG_LoadTexture(Renderer,Boss_Destroy_File);
+                SDL_RenderCopy(Renderer,BossTexture,NULL,&BossRect);
+                boss->status = -1;
+            }else if(boss->status == -1){
+                FinalFont = TTF_OpenFont("BERNHC.TTF",100);
+                FinalSurface = TTF_RenderUTF8_Blended(FinalFont,"You win!",FontColor);
+                FinalTexture = SDL_CreateTextureFromSurface(Renderer,FinalSurface);
+                FinalRect.x = 300;
+                FinalRect.y = 250;
+                FinalRect.w = 200;
+                FinalRect.h = 200;
+                SDL_RenderCopy(Renderer,FinalTexture,NULL,&FinalRect);
+                SDL_RenderPresent(Renderer);
+                SDL_Delay(3000);
+                BattlefieldQuit(Battlefield,BattlefieldTexture,BattlefieldTexture_1,Player_main);
+                return;
+            }
+        }
 
-        PlayerRect.x = Player_main->x;
-        PlayerRect.y = Player_main->y;
-        SDL_RenderCopy(Renderer,PlayerTexture,NULL,&PlayerRect);
+        if(Player_main->HP < 0)Player_main->HP = 0;
+        if(Player_main->HP == 0){
+            if(plane_speed == 12){
+                PlayerTexture = IMG_LoadTexture(Renderer,Player_Destroy_File);
+            }else{
+                PlayerTexture = IMG_LoadTexture(Renderer,Player_Destroy_File1);
+            }
+            SDL_RenderCopy(Renderer,PlayerTexture,NULL,&PlayerRect);
+            FinalFont = TTF_OpenFont("BERNHC.TTF",100);
+            FinalSurface = TTF_RenderUTF8_Blended(FinalFont,"You lose!",FontColor);
+            FinalTexture = SDL_CreateTextureFromSurface(Renderer,FinalSurface);
+            FinalRect.x = 300;
+            FinalRect.y = 250;
+            FinalRect.w = 200;
+            FinalRect.h = 200;
+            SDL_RenderCopy(Renderer,FinalTexture,NULL,&FinalRect);
+            SDL_RenderPresent(Renderer);
+            SDL_Delay(3000);
+            BattlefieldQuit(Battlefield,BattlefieldTexture,BattlefieldTexture_1,Player_main);
+            return;
+        }
+
         SDL_RenderPresent(Renderer);
         SDL_Event game_event;
         while(SDL_PollEvent(&game_event)){
@@ -352,7 +426,6 @@ void BattlefieldLoad(){
                     BattlefieldQuit(Battlefield,BattlefieldTexture,BattlefieldTexture_1,Player_main);
                     return;
                 case SDL_MOUSEBUTTONDOWN:
-                    printf("%d , %d\n",game_event.button.x,game_event.button.y);
                     break;
                 case SDL_KEYDOWN:
                     switch (game_event.key.keysym.sym) {
@@ -430,7 +503,6 @@ void BattlefieldLoad(){
         }
     }
 
-
 }
 void Initialize_my_plane(Player *Player_main){
     Player_main->HP = 100;
@@ -481,20 +553,17 @@ void shoot1(Player *Player_main){
             if(cnt == 0){
                 reload_bullet1 = 10;
                 break;
-            }
-            if(bullet1[i] == NULL && cnt == 3){
+            }else if(bullet1[i] == NULL && cnt == 3){
                 bullet1[i] = CreateBullet_1();
                 bullet1[i]->x = Player_main->x;
                 bullet1[i]->y = Player_main->y;
                 cnt--;
-            }
-            if(bullet1[i] == NULL && cnt == 2){
+            }else if(bullet1[i] == NULL && cnt == 2){
                 bullet1[i] = CreateBullet_1();
                 bullet1[i]->x = Player_main->x + PlayerRect.w / 2;
                 bullet1[i]->y = Player_main->y;
                 cnt--;
-            }
-            if(bullet1[i] == NULL && cnt == 1){
+            }else if(bullet1[i] == NULL && cnt == 1){
                 bullet1[i] = CreateBullet_1();
                 bullet1[i]->x = Player_main->x + PlayerRect.w;
                 bullet1[i]->y = Player_main->y;
@@ -710,7 +779,6 @@ void Enemy2_level2( int *score){
                     CreateBullet *clear_bullet = bullet1[j];
                     bullet1[j] = NULL;
                     free(clear_bullet);
-                    break;
                 }
             }
         }
@@ -729,7 +797,7 @@ void Enemy3_level3(int *score){
                 break;
             }
         }
-        whether_create_enemy3 = 325;
+        whether_create_enemy3 = 200;
     }else{
         whether_create_enemy3--;
     }
@@ -773,7 +841,7 @@ void Enemy3_level3(int *score){
             }
             if(ans == 0){
                 int num = rand() % 20;
-                if(num >= 5 && num <= 13){
+                if(num >= 5 && num <= 10){
                     ans = 1;
                     for (int j = 0; j < 50; j++) {
                         if(props[j] == NULL){
@@ -791,7 +859,7 @@ void Enemy3_level3(int *score){
             }
             if(ans == 0){
                 int num = rand() % 20;
-                if(num >= 14){
+                if(num >= 11){
                     for (int j = 0; j < 50; j++) {
                         if(props[j] == NULL){
                             props[j] = prop();
@@ -827,14 +895,103 @@ void Enemy3_level3(int *score){
                     CreateBullet *clear_bullet = bullet1[j];
                     bullet1[j] = NULL;
                     free(clear_bullet);
-                    break;
                 }
             }
         }
 
     }
 }
-
+void Boss(Player *Player_main){
+    if(boss->reload1 == 0){
+        int cnt = 4;
+        for (int i = 0; i < 100; i++) {
+            if(cnt == 0){
+                boss->reload1 = 30;
+                break;
+            }
+            if(boss_bullet_1[i] == NULL){
+                boss_bullet_1[i] = CreateBullet_2();
+                boss_bullet_1[i]->x = cnt * BossRect.w / 5  + BossRect.x - 10;
+                boss_bullet_1[i]->y = BossRect.y + 100;
+                BossBullet1Rect.x = boss_bullet_1[i]->x;
+                BossBullet1Rect.y = boss_bullet_1[i]->y;
+                SDL_RenderCopy(Renderer,BossBullet1Texture,NULL,&BossBullet1Rect);
+                cnt--;
+            }
+        }
+    }else{
+        boss->reload1--;
+    }
+    if(boss->reload2 == 0){
+        int cnt = 7;
+        for (int i = 0; i < 200; i++) {
+            if(cnt == 0){
+                boss->reload2 = 180;
+                break;
+            }else if(boss_bullet_2[i] == NULL){
+                boss_bullet_2[i] = CreateBullet_3();
+                boss_bullet_2[i]->x = (cnt - 1) * 130;
+                boss_bullet_2[i]->y = BossRect.y + 30;
+                BossBullet2Rect.x = boss_bullet_2[i]->x;
+                BossBullet2Rect.y = boss_bullet_2[i]->y;
+                SDL_RenderCopy(Renderer,BossBullet2Texture,NULL,&BossBullet2Rect);
+                cnt--;
+            }
+        }
+    }else{
+        boss->reload2--;
+    }
+    for (int i = 0; i < 100; i++) {
+        if(boss_bullet_1[i] != NULL && boss_bullet_1[i]->y <= 800 && !Is_Attacked_boss(Player_main,boss_bullet_1[i])){
+            boss_bullet_1[i]->y += 6;
+            BossBullet1Rect.y = boss_bullet_1[i]->y;
+            BossBullet1Rect.x = boss_bullet_1[i]->x;
+            SDL_RenderCopy(Renderer,BossBullet1Texture,NULL,&BossBullet1Rect);
+        }else if(boss_bullet_1[i] != NULL && boss_bullet_1[i]->y >= 800 ){
+            free(boss_bullet_1[i]);
+            boss_bullet_1[i] = NULL;
+        }else if (boss_bullet_1[i] != NULL && boss_bullet_1[i]->y <= 800 && Is_Attacked_boss(Player_main,boss_bullet_1[i])){
+            if(boss_bullet_1[i]->level == 2){
+                Player_main->HP -= 10;
+            }else if(boss_bullet_1[i]->level == 3){
+                Player_main->HP -= 20;
+            }
+            free(boss_bullet_1[i]);
+            boss_bullet_1[i] = NULL;
+        }
+    }
+    for (int i = 0; i < 200; i++) {
+        if(boss_bullet_2[i] != NULL && boss_bullet_2[i]->y <= 800 && !Is_Attacked_boss1(Player_main,boss_bullet_2[i])){
+            boss_bullet_2[i]->y += 6;
+            BossBullet2Rect.y = boss_bullet_2[i]->y;
+            BossBullet2Rect.x = boss_bullet_2[i]->x;
+            SDL_RenderCopy(Renderer,BossBullet2Texture,NULL,&BossBullet2Rect);
+        }else if(boss_bullet_2[i] != NULL && boss_bullet_2[i]->y >= 800 ){
+            free(boss_bullet_2[i]);
+            boss_bullet_2[i] = NULL;
+        }else if (boss_bullet_2[i] != NULL && boss_bullet_2[i]->y <= 800 && Is_Attacked_boss1(Player_main,boss_bullet_2[i])){
+            if(boss_bullet_2[i]->level == 2){
+                Player_main->HP -= 10;
+            }else if(boss_bullet_2[i]->level == 3){
+                Player_main->HP -= 20;
+            }
+            free(boss_bullet_2[i]);
+            boss_bullet_2[i] = NULL;
+        }
+    }
+    for (int i = 0; i < 100; i++) {
+        if(bullet1[i] != NULL && Is_Bombed_boss(bullet1[i]) && boss->status == 1){
+            if(bullet1[i]->level == 1){
+                boss->hp -= 20;
+            }else if(bullet1[i]->level == 2){
+                boss->hp -= 50;
+            }
+            if(boss->hp <= 0)boss->status = 0;
+            free(bullet1[i]);
+            bullet1[i] = NULL;
+        }
+    }
+}
 void Enemy_shoot1(CreateEnemy2 *enemy){
     if(enemy->reload == 0){
         for (int i = 0; i < 100; i++) {
@@ -1001,6 +1158,33 @@ bool GetProps(CreateProp *prop, Player *Player_main){
     }
 }
 
+bool Is_Bombed_boss(CreateBullet *bullet){
+    if(bullet->x >= boss->x && bullet->x <= boss->x + BossRect.w
+    && bullet->y >= boss->y && bullet->y <= boss->y + BossRect.h){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
+bool Is_Attacked_boss(Player *Player_main,CreateBullet *bullet){
+    if(bullet->x >= Player_main->x && bullet->x <= Player_main->x + PlayerRect.w
+       && bullet->y >= Player_main->y && bullet->y <= Player_main->y + PlayerRect.h){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+bool Is_Attacked_boss1(Player *Player_main,CreateBullet *bullet){
+    if(((bullet->x >= Player_main->x && bullet->x <= Player_main->x + PlayerRect.w) || (bullet->x + BossBullet2Rect.w >= Player_main->x
+    && bullet->x + BossBullet2Rect.w <= Player_main->x + PlayerRect.w))
+    && bullet->y >= Player_main->y && bullet->y <= Player_main->y + PlayerRect.h){
+        return 1;
+    }else{
+        return 0;
+    }
+}
+
 void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, SDL_Texture *BattlefieldTexture_1
                      ,Player *p){
     SDL_FreeSurface(Battlefield);
@@ -1027,5 +1211,19 @@ void BattlefieldQuit(SDL_Surface *Battlefield,SDL_Texture *BattlefieldTexture, S
         free(props[i]);
         props[i] = NULL;
     }
+    for (int i = 0; i < 100; i++) {
+        free(boss_bullet_1[i]);
+    }
+    for (int i = 0; i < 200; i++) {
+        free(boss_bullet_2[i]);
+    }
+    plane_speed = 8;
+    whether_create_enemy1 = 0;
+    whether_create_enemy2 = 0;
+    whether_create_enemy3 = 0;
+    whether_update_plane = 0;
+    whether_create_blood = 0;
+    count_of_Sapphire = 0;
+    count_of_gold = 0;
     free(p);
 }

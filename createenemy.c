@@ -27,6 +27,15 @@ typedef struct createEnemy3{
     int status;
 }CreateEnemy3;
 
+typedef struct boss{
+    int x;
+    int y;
+    int hp;
+    int reload1;
+    int reload2;
+    int status;
+}Boss_;
+
 CreateEnemy *create_level1(){
     srand((unsigned )time(NULL));
     CreateEnemy *enemy = malloc(sizeof(CreateEnemy));
@@ -56,4 +65,15 @@ CreateEnemy3 *create_level3(){
     enemy->reload = 0;
     enemy->status = 1;
     return enemy;
+}
+
+Boss_ *create_boss(){
+    Boss_ *p = malloc(sizeof(Boss_));
+    p->x = 250;
+    p->y = 50;
+    p->hp = 5000;
+    p->reload1 = 0;
+    p->reload2 = 0;
+    p->status = 1;
+    return p;
 }
