@@ -313,7 +313,7 @@ void BattlefieldLoad(){
          * copy的顺序决定了覆盖的优先级
          * 解决了地图滚动的问题
          */
-        if(count_of_gold == 4){
+        if(count_of_gold >= 4){
             Bullet_1_Texture = IMG_LoadTexture(Renderer,Bullet2_File);
             Bullet_1_Rect.w = 20;
             Bullet_1_Rect.h = 44;
@@ -501,6 +501,8 @@ void BattlefieldLoad(){
         if(delay > 0){
             SDL_Delay(delay);
         }
+
+
     }
 
 }
@@ -668,7 +670,7 @@ void Enemy2_level2( int *score){
         for (int i = 0; i < 50; i++) {
             if(enemy2[i] == NULL){
                 enemy2[i] = create_level2();
-                if(enemy2[i]->x <= 50 ){
+                if(enemy2[i]->x <= 120 ){
                     enemy2[i]->x += 100;
                 }
                 break;
@@ -680,10 +682,10 @@ void Enemy2_level2( int *score){
     }
     for (int i = 0; i < 50; i++) {
         if(enemy2[i] != NULL && enemy2[i]->y <= 800 && enemy2[i]->status == 1){
-            if(enemy2[i]->x <= 750){
+            if(enemy2[i]->x <= 700){
                 Enemy2Rect.x = enemy2[i]->x;
             }else{
-                enemy2[i]->x -= 250;
+                enemy2[i]->x -= 150;
                 Enemy2Rect.x = enemy2[i]->x;
             }
             Enemy2Rect.y = enemy2[i]->y;
@@ -1176,7 +1178,7 @@ bool Is_Attacked_boss(Player *Player_main,CreateBullet *bullet){
     }
 }
 bool Is_Attacked_boss1(Player *Player_main,CreateBullet *bullet){
-    if(((bullet->x >= Player_main->x && bullet->x <= Player_main->x + PlayerRect.w) || (bullet->x + BossBullet2Rect.w >= Player_main->x
+    if(((bullet->x >= Player_main->x && bullet->x <= Player_main->x + PlayerRect.w - 5) || (bullet->x + BossBullet2Rect.w - 5 >= Player_main->x
     && bullet->x + BossBullet2Rect.w <= Player_main->x + PlayerRect.w))
     && bullet->y >= Player_main->y && bullet->y <= Player_main->y + PlayerRect.h){
         return 1;
