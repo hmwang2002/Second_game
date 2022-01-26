@@ -395,8 +395,9 @@ void BattlefieldLoad(){
                 return;
             }
         }
-
-        if(Player_main->HP < 0)Player_main->HP = 0;
+        if(Player_main->HP < 0){
+            Player_main->HP = 0;
+        }
         if(Player_main->HP == 0){
             if(plane_speed == 12){
                 PlayerTexture = IMG_LoadTexture(Renderer,Player_Destroy_File);
@@ -417,6 +418,7 @@ void BattlefieldLoad(){
             BattlefieldQuit(Battlefield,BattlefieldTexture,BattlefieldTexture_1,Player_main);
             return;
         }
+
 
         SDL_RenderPresent(Renderer);
         SDL_Event game_event;
@@ -501,7 +503,6 @@ void BattlefieldLoad(){
         if(delay > 0){
             SDL_Delay(delay);
         }
-
 
     }
 
@@ -670,7 +671,7 @@ void Enemy2_level2( int *score){
         for (int i = 0; i < 50; i++) {
             if(enemy2[i] == NULL){
                 enemy2[i] = create_level2();
-                if(enemy2[i]->x <= 120 ){
+                if(enemy2[i]->x <= 200 ){
                     enemy2[i]->x += 100;
                 }
                 break;
